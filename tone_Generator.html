@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clean Dual Multi-Tone Generator</title>
+  <style>
+    :root {
+      --bg-color: #121214;
+      --card-bg: #1e1e24;
+      --border-color: #33333d;
+      --accent-color: #4f46e5;
+      --accent-hover: #4338ca;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --danger-color: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    fieldset {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: var(--card-bg);
+    }
+
+    legend {
+      font-weight: 600;
+      padding: 0 6px;
+      color: #818cf8;
+      font-size: 0.9rem;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    input, select, button {
+      background: #2b2b36;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    input[type="number"] { width: 70px; }
+    input[type="checkbox"] { cursor: pointer; }
+
+    button {
+      background-color: var(--accent-color);
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background-color: var(--accent-hover); }
+    button.btn-danger { background-color: var(--danger-color); }
+
+    /* Horizontal Steps Layout */
+    .sequence-container {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      min-height: 380px;
+    }
+
+    .step-card {
+      min-width: 260px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .step-card h4 {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+      color: #38bdf8;
+    }
+
+    .sub-group {
+      background: #18181c;
+      border: 1px solid #282830;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sub-group-title {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Global Controls -->
+  <fieldset>
+    <legend>Global Controls</legend>
+    <div class="row">
+      <button id="playBtn" onclick="togglePlay()">Play Sequence</button>
+      <button id="muteBtn" onclick="toggleMute()">Mute Tones</button>
+      <label><input type="checkbox" id="loopVar" checked> Loop</label>
+      <label>Tone Vol: <input type="number" id="volVar" value="0.15" step="0.01" min="0" max="1"></label>
+    </div>
+  </fieldset>
+
+  <!-- Bandwidth Filtering -->
+  <fieldset>
+    <legend>Bandwidth Filtering</legend>
+    <div class="row">
+      <label><input type="checkbox" id="bwEnable" checked> Enable Filter</label>
+      <label>BW Left (Hz): <input type="number" id="bwLeft" value="300"></label>
+      <label>BW Right (Hz): <input type="number" id="bwRight" value="2800"></label>
+    </div>
+  </fieldset>
+
+  <!-- Post-Tone Hum Settings -->
+  <fieldset>
+    <legend>Post-Tone Hum Settings</legend>
+    <div class="row">
+      <label><input type="checkbox" id="humEnable" checked> Enable Hum</label>
+      <label>Hz: <input type="number" id="humFreq" value="60"></label>
+      <label>Wave:
+        <select id="humWave">
+          <option value="sine">sine</option>
+          <option value="triangle">triangle</option>
+          <option value="square">square</option>
+          <option value="sawtooth">sawtooth</option>
+        </select>
+      </label>
+      <label>Vol: <input type="number" id="humVol" value="0.10" step="0.01"></label>
+      <label><input type="checkbox" id="humFade" checked> Fade</label>
+      <label>Fade (s): <input type="number" id="humFadeLen" value="0.15" step="0.01"></label>
+    </div>
+  </fieldset>
+
+  <!-- Presets -->
+  <div class="row">
+    <button onclick="loadPreset('dual_sweep')">Preset: Dual Sine Sweep</button>
+    <button onclick="loadPreset('dtmf')">Preset: DTMF Pair</button>
+    <button onclick="loadPreset('staccato')">Preset: Staccato Chords</button>
+  </div>
+
+  <!-- Horizontal Scroll Sequence -->
+  <div class="sequence-container" id="sequenceContainer"></div>
+
+  <div>
+    <button onclick="addStep()">+ Add Step to Right</button>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    let isPlaying = false;
+    let isMuted = false;
+    let currentStepIndex = 0;
+    let timerId = null;
+
+    let sequence = [
+      {
+        startFreq: 1200, endFreq: 400, wave: "sine", enableFade: true, fadeTime: 0.05,
+        enableTone2: true, startFreq2: 2400, endFreq2: 800, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
+        duration: 0.25, interval: 0.35
+      },
+      {
+        startFreq: 1500, endFreq: 500, wave: "sine", enableFade: true, fadeTime: 0.05,
+        enableTone2: true, startFreq2: 750, endFreq2: 250, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
+        duration: 0.25, interval: 0.35
+      },
+      {
+        startFreq: 400, endFreq: 1800, wave: "sine", enableFade: true, fadeTime: 0.08,
+        enableTone2: false, startFreq2: 800, endFreq2: 3600, wave2: "sine", enableFade2: false, fadeTime2: 0.05,
+        duration: 0.4, interval: 0.4
+      }
+    ];
+
+    function renderSequence() {
+      const container = document.getElementById('sequenceContainer');
+      container.innerHTML = '';
+
+      sequence.forEach((step, idx) => {
+        const card = document.createElement('div');
+        card.className = 'step-card';
+        card.innerHTML = `
+          <h4>Step ${idx + 1}</h4>
+          
+          <div class="sub-group">
+            <span class="sub-group-title">Tone Generator 1</span>
+            <div class="grid-2">
+              <label>Start: <input type="number" value="${step.startFreq}" onchange="updateStep(${idx}, 'startFreq', +this.value)"></label>
+              <label>End: <input type="number" value="${step.endFreq}" onchange="updateStep(${idx}, 'endFreq', +this.value)"></label>
+            </div>
+            <div class="grid-2">
+              <select onchange="updateStep(${idx}, 'wave', this.value)">
+                ${['sine', 'triangle', 'square', 'sawtooth'].map(w => `<option value="${w}" ${step.wave === w ? 'selected' : ''}>${w}</option>`).join('')}
+              </select>
+              <label><input type="checkbox" ${step.enableFade ? 'checked' : ''} onchange="updateStep(${idx}, 'enableFade', this.checked)"> Fade</label>
+            </div>
+          </div>
+
+          <div class="sub-group">
+            <span class="sub-group-title">Tone Generator 2</span>
+            <label><input type="checkbox" ${step.enableTone2 ? 'checked' : ''} onchange="updateStep(${idx}, 'enableTone2', this.checked)"> Enable</label>
+            <div class="grid-2">
+              <label>Start: <input type="number" value="${step.startFreq2}" onchange="updateStep(${idx}, 'startFreq2', +this.value)"></label>
+              <label>End: <input type="number" value="${step.endFreq2}" onchange="updateStep(${idx}, 'endFreq2', +this.value)"></label>
+            </div>
+            <select onchange="updateStep(${idx}, 'wave2', this.value)">
+              ${['sine', 'triangle', 'square', 'sawtooth'].map(w => `<option value="${w}" ${step.wave2 === w ? 'selected' : ''}>${w}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="sub-group">
+            <span class="sub-group-title">Timing</span>
+            <div class="grid-2">
+              <label>Tone (s): <input type="number" step="0.01" value="${step.duration}" onchange="updateStep(${idx}, 'duration', +this.value)"></label>
+              <label>Interval: <input type="number" step="0.01" value="${step.interval}" onchange="updateStep(${idx}, 'interval', +this.value)"></label>
+            </div>
+          </div>
+
+          <button class="btn-danger" onclick="removeStep(${idx})">Remove Step</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateStep(idx, key, val) { sequence[idx][key] = val; }
+
+    function addStep() {
+      const last = sequence.length ? { ...sequence[sequence.length - 1] } : {
+        startFreq: 440, endFreq: 440, wave: "sine", enableFade: true, fadeTime: 0.05,
+        enableTone2: false, startFreq2: 880, endFreq2: 880, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
+        duration: 0.3, interval: 0.3
+      };
+      sequence.push(last);
+      renderSequence();
+    }
+
+    function removeStep(idx) {
+      if (sequence.length > 1) {
+        sequence.splice(idx, 1);
+        renderSequence();
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      document.getElementById('muteBtn').innerText = isMuted ? "Unmute Tones" : "Mute Tones";
+    }
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function togglePlay() {
+      initAudioContext();
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('playBtn');
+
+      if (isPlaying) {
+        btn.innerText = "Stop Sequence";
+        currentStepIndex = 0;
+        playNextStep();
+      } else {
+        btn.innerText = "Play Sequence";
+        clearTimeout(timerId);
+      }
+    }
+
+    function playTone(freqStart, freqEnd, waveType, duration, enableFade, fadeTime, targetNode, startTime) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = waveType;
+      
+      const f1 = Math.max(10, freqStart);
+      const f2 = Math.max(10, freqEnd);
+
+      osc.frequency.setValueAtTime(f1, startTime);
+      if (Math.abs(f1 - f2) > 0.01) {
+        osc.frequency.exponentialRampToValueAtTime(f2, startTime + duration);
+      }
+
+      if (enableFade && fadeTime > 0) {
+        const actualFade = Math.min(fadeTime, duration / 2);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(1, startTime + actualFade);
+        gain.gain.setValueAtTime(1, startTime + duration - actualFade);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      } else {
+        gain.gain.setValueAtTime(1, startTime);
+      }
+
+      osc.connect(gain);
+      gain.connect(targetNode);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function playNextStep() {
+      if (!isPlaying) return;
+
+      const step = sequence[currentStepIndex];
+      const now = audioCtx.currentTime;
+      const duration = Math.max(0.05, step.duration);
+      const interval = Math.max(0.0, step.interval);
+      const totalStepTime = duration + interval;
+
+      const masterVol = isMuted ? 0 : parseFloat(document.getElementById('volVar').value);
+
+      // Routing setup (Filters -> Destination)
+      let outputNode = audioCtx.createGain();
+      outputNode.gain.setValueAtTime(masterVol, now);
+
+      if (document.getElementById('bwEnable').checked) {
+        const hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = Math.max(10, parseFloat(document.getElementById('bwLeft').value));
+
+        const lp = audioCtx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = Math.min(audioCtx.sampleRate / 2, parseFloat(document.getElementById('bwRight').value));
+
+        outputNode.connect(hp);
+        hp.connect(lp);
+        lp.connect(audioCtx.destination);
+      } else {
+        outputNode.connect(audioCtx.destination);
+      }
+
+      // Synthesize Tone 1
+      playTone(step.startFreq, step.endFreq, step.wave, duration, step.enableFade, step.fadeTime, outputNode, now);
+
+      // Synthesize Tone 2
+      if (step.enableTone2) {
+        playTone(step.startFreq2, step.endFreq2, step.wave2, duration, step.enableFade2, step.fadeTime2, outputNode, now);
+      }
+
+      // Post-Tone Hum during interval
+      if (interval > 0 && document.getElementById('humEnable').checked) {
+        const humFreq = parseFloat(document.getElementById('humFreq').value);
+        const humWave = document.getElementById('humWave').value;
+        const humVol = parseFloat(document.getElementById('humVol').value);
+        const humFade = document.getElementById('humFade').checked;
+        const humFadeLen = parseFloat(document.getElementById('humFadeLen').value);
+
+        const humGainNode = audioCtx.createGain();
+        humGainNode.gain.value = humVol;
+        humGainNode.connect(outputNode);
+
+        playTone(humFreq, humFreq, humWave, interval, humFade, humFadeLen, humGainNode, now + duration);
+      }
+
+      // Schedule next sequence step
+      currentStepIndex = (currentStepIndex + 1) % sequence.length;
+
+      if (currentStepIndex === 0 && !document.getElementById('loopVar').checked) {
+        timerId = setTimeout(() => {
+          isPlaying = false;
+          document.getElementById('playBtn').innerText = "Play Sequence";
+        }, totalStepTime * 1000);
+      } else {
+        timerId = setTimeout(playNextStep, totalStepTime * 1000);
+      }
+    }
+
+    function loadPreset(type) {
+      if (type === 'dual_sweep') {
+        sequence = [
+          { startFreq: 1500, endFreq: 400, wave: "sine", enableFade: true, fadeTime: 0.05, enableTone2: true, startFreq2: 2800, endFreq2: 800, wave2: "sine", enableFade2: true, fadeTime2: 0.05, duration: 0.2, interval: 0.3 },
+          { startFreq: 2000, endFreq: 500, wave: "sine", enableFade: true, fadeTime: 0.05, enableTone2: true, startFreq2: 1000, endFreq2: 300, wave2: "sine", enableFade2: true, fadeTime2: 0.05, duration: 0.2, interval: 0.3 },
+          { startFreq: 2500, endFreq: 600, wave: "sine", enableFade: true, fadeTime: 0.08, enableTone2: true, startFreq2: 1800, endFreq2: 400, wave2: "sine", enableFade2: true, fadeTime2: 0.08, duration: 0.35, interval: 0.4 }
+        ];
+      } else if (type === 'dtmf') {
+        sequence = [
+          { startFreq: 697, endFreq: 697, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1209, endFreq2: 1209, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.2, interval: 0.25 },
+          { startFreq: 697, endFreq: 697, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1336, endFreq2: 1336, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.2, interval: 0.25 },
+          { startFreq: 770, endFreq: 770, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1477, endFreq2: 1477, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.3, interval: 0.3 }
+        ];
+      } else if (type === 'staccato') {
+        sequence = [
+          { startFreq: 440, endFreq: 440, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 554.37, endFreq2: 554.37, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.15, interval: 0.35 },
+          { startFreq: 554.37, endFreq: 554.37, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 659.25, endFreq2: 659.25, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.15, interval: 0.35 },
+          { startFreq: 659.25, endFreq: 659.25, wave: "sine", enableFade: true, fadeTime: 0.03, enableTone2: true, startFreq2: 880, endFreq2: 880, wave2: "sine", enableFade2: true, fadeTime2: 0.03, duration: 0.2, interval: 0.45 }
+        ];
+      }
+      renderSequence();
+    }
+
+    renderSequence();
+  </script>
+</body>
+</html>
