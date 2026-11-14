@@ -1,437 +1,610 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clean Dual Multi-Tone Generator</title>
-  <style>
-    :root {
-      --bg-color: #121214;
-      --card-bg: #1e1e24;
-      --border-color: #33333d;
-      --accent-color: #4f46e5;
-      --accent-hover: #4338ca;
-      --text-color: #f3f4f6;
-      --text-muted: #9ca3af;
-      --danger-color: #ef4444;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tone Generator</title>
+<style>
+  :root {
+    --bg-page: #c9d2de;
+    --window-bg: #eceff4;
+    --header-bg: linear-gradient(to bottom, #4a75b5, #2b4f8c);
+    --header-border: #1e3763;
+    --panel-bg: #ffffff;
+    --panel-border: #b0bcd0;
+    --text-main: #1c2833;
+    --text-muted: #5a6b82;
+    --btn-blue-top: #6ba8f0;
+    --btn-blue-bot: #2964c9;
+    --btn-red-top: #f57979;
+    --btn-red-bot: #c92a2a;
+    --btn-gray-top: #f4f6fa;
+    --btn-gray-bot: #d0d7e5;
+  }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-    fieldset {
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 12px 16px;
-      background: var(--card-bg);
-    }
+  body {
+    background-color: var(--bg-page);
+    background-image: linear-gradient(to bottom, #dbe3ed 0%, #b8c5d6 100%);
+    color: var(--text-main);
+    font-family: Tahoma, Arial, Helvetica, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
 
-    legend {
-      font-weight: 600;
-      padding: 0 6px;
-      color: #818cf8;
-      font-size: 0.9rem;
-    }
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    background: var(--window-bg);
+    border: 1px solid #7d8ea6;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+  }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-    }
+  /* 2009 Web 2.0 Header */
+  header {
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--header-border);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    color: white;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
+  }
 
-    label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+  .brand h1 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
 
-    input, select, button {
-      background: #2b2b36;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      outline: none;
-    }
+  .brand p {
+    font-size: 0.75rem;
+    color: #d2e1f8;
+    margin-top: 2px;
+  }
 
-    input[type="number"] { width: 70px; }
-    input[type="checkbox"] { cursor: pointer; }
+  .control-dock {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
 
-    button {
-      background-color: var(--accent-color);
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover { background-color: var(--accent-hover); }
-    button.btn-danger { background-color: var(--danger-color); }
+  .timer-box {
+    background: #111a2c;
+    border: 1px solid #080d16;
+    border-radius: 4px;
+    padding: 6px 12px;
+    text-align: right;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+  }
 
-    /* Horizontal Steps Layout */
-    .sequence-container {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 12px;
-      min-height: 380px;
-    }
+  #masterTimer {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #4cd137;
+    text-shadow: 0 0 6px rgba(76, 209, 55, 0.5);
+    line-height: 1.1;
+  }
 
-    .step-card {
-      min-width: 260px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex-shrink: 0;
-    }
+  #masterStatus {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #8da4c4;
+    letter-spacing: 0.5px;
+  }
 
-    .step-card h4 {
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 4px;
-      color: #38bdf8;
-    }
+  .dock-buttons {
+    display: flex;
+    gap: 8px;
+  }
 
-    .sub-group {
-      background: #18181c;
-      border: 1px solid #282830;
-      border-radius: 6px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+  /* Glossy Web 2.0 Buttons */
+  button {
+    cursor: pointer;
+    font-family: Tahoma, Arial, sans-serif;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: filter 0.1s ease;
+  }
 
-    .sub-group-title {
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
+  button:hover {
+    filter: brightness(1.08);
+  }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-  </style>
+  button:active {
+    filter: brightness(0.92);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-toggle.is-stopped {
+    background: linear-gradient(to bottom, #72bc61, #388a28);
+    border-color: #2b6d1e;
+    color: white;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-toggle.is-running {
+    background: linear-gradient(to bottom, var(--btn-red-top), var(--btn-red-bot));
+    border-color: #9a1f1f;
+    color: white;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-add {
+    background: linear-gradient(to bottom, var(--btn-blue-top), var(--btn-blue-bot));
+    border-color: #1b4b9b;
+    color: white;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  /* Main Workspace Grid */
+  main {
+    padding: 20px;
+  }
+
+  #channelGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .channel-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .channel-card.active-playback {
+    border-color: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e1e7ef;
+    padding-bottom: 6px;
+  }
+
+  .card-title {
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: #2b4f8c;
+    text-transform: uppercase;
+  }
+
+  .btn-delete {
+    background: linear-gradient(to bottom, #fff, #e6ecf5);
+    border-color: #b0bcd0;
+    color: #c92a2a;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .field.full {
+    grid-column: span 2;
+  }
+
+  label {
+    font-size: 0.68rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  input[type="number"], select {
+    background: #fdfdfd;
+    border: 1px solid #a4b3c6;
+    border-radius: 3px;
+    color: var(--text-main);
+    padding: 5px 6px;
+    font-size: 0.8rem;
+    font-family: Tahoma, Arial, sans-serif;
+    width: 100%;
+    outline: none;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  input[type="number"]:focus, select:focus {
+    border-color: #3b82f6;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 4px rgba(59, 130, 246, 0.4);
+  }
+
+  .status-badge {
+    background: #eef2f7;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    padding: 4px;
+    font-size: 0.72rem;
+    text-align: center;
+    color: #334155;
+    font-style: italic;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e1e7ef;
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .checkbox-group input {
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+  }
+
+  .checkbox-group label {
+    text-transform: none;
+    font-size: 0.78rem;
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: normal;
+  }
+
+  .btn-preview {
+    background: linear-gradient(to bottom, var(--btn-gray-top), var(--btn-gray-bot));
+    border-color: #a4b3c6;
+    color: #2b3a4a;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+</style>
+<link rel="icon" type="image/png" href="icon.png">
 </head>
 <body>
 
-  <!-- Global Controls -->
-  <fieldset>
-    <legend>Global Controls</legend>
-    <div class="row">
-      <button id="playBtn" onclick="togglePlay()">Play Sequence</button>
-      <button id="muteBtn" onclick="toggleMute()">Mute Tones</button>
-      <label><input type="checkbox" id="loopVar" checked> Loop</label>
-      <label>Tone Vol: <input type="number" id="volVar" value="0.15" step="0.01" min="0" max="1"></label>
+<div class="container">
+  <header>
+    <div class="brand">
+      <h1>Tone Generator</h1>
+      <p>Web 2.0 Frequency Modulation &amp; Glide Utility</p>
     </div>
-  </fieldset>
 
-  <!-- Bandwidth Filtering -->
-  <fieldset>
-    <legend>Bandwidth Filtering</legend>
-    <div class="row">
-      <label><input type="checkbox" id="bwEnable" checked> Enable Filter</label>
-      <label>BW Left (Hz): <input type="number" id="bwLeft" value="300"></label>
-      <label>BW Right (Hz): <input type="number" id="bwRight" value="2800"></label>
+    <div class="control-dock">
+      <div class="timer-box">
+        <div id="masterTimer">00:00.0</div>
+        <div id="masterStatus">Ready</div>
+      </div>
+
+      <div class="dock-buttons">
+        <button class="btn-toggle is-stopped" id="togglePlaybackBtn">▶ Play All</button>
+        <button class="btn-add" id="addChannelBtn">+ Add Channel</button>
+      </div>
     </div>
-  </fieldset>
+  </header>
 
-  <!-- Post-Tone Hum Settings -->
-  <fieldset>
-    <legend>Post-Tone Hum Settings</legend>
-    <div class="row">
-      <label><input type="checkbox" id="humEnable" checked> Enable Hum</label>
-      <label>Hz: <input type="number" id="humFreq" value="60"></label>
-      <label>Wave:
-        <select id="humWave">
-          <option value="sine">sine</option>
-          <option value="triangle">triangle</option>
-          <option value="square">square</option>
-          <option value="sawtooth">sawtooth</option>
-        </select>
-      </label>
-      <label>Vol: <input type="number" id="humVol" value="0.10" step="0.01"></label>
-      <label><input type="checkbox" id="humFade" checked> Fade</label>
-      <label>Fade (s): <input type="number" id="humFadeLen" value="0.15" step="0.01"></label>
-    </div>
-  </fieldset>
+  <main>
+    <div id="channelGrid"></div>
+  </main>
+</div>
 
-  <!-- Presets -->
-  <div class="row">
-    <button onclick="loadPreset('dual_sweep')">Preset: Dual Sine Sweep</button>
-    <button onclick="loadPreset('dtmf')">Preset: DTMF Pair</button>
-    <button onclick="loadPreset('staccato')">Preset: Staccato Chords</button>
-  </div>
+<script>
+  let audioCtx = null;
+  let sequenceStartTime = null;
+  let isPlaying = false;
+  let timerAnimationId = null;
 
-  <!-- Horizontal Scroll Sequence -->
-  <div class="sequence-container" id="sequenceContainer"></div>
+  let channelCounter = 0;
+  const channelMap = new Map();
 
-  <div>
-    <button onclick="addStep()">+ Add Step to Right</button>
-  </div>
+  const channelGrid = document.getElementById('channelGrid');
+  const addChannelBtn = document.getElementById('addChannelBtn');
+  const togglePlaybackBtn = document.getElementById('togglePlaybackBtn');
+  const masterTimerEl = document.getElementById('masterTimer');
+  const masterStatusEl = document.getElementById('masterStatus');
 
-  <script>
-    let audioCtx = null;
-    let isPlaying = false;
-    let isMuted = false;
-    let currentStepIndex = 0;
-    let timerId = null;
+  function getAudioContext() {
+    if (!audioCtx || audioCtx.state === 'closed') {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
 
-    let sequence = [
-      {
-        startFreq: 1200, endFreq: 400, wave: "sine", enableFade: true, fadeTime: 0.05,
-        enableTone2: true, startFreq2: 2400, endFreq2: 800, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
-        duration: 0.25, interval: 0.35
-      },
-      {
-        startFreq: 1500, endFreq: 500, wave: "sine", enableFade: true, fadeTime: 0.05,
-        enableTone2: true, startFreq2: 750, endFreq2: 250, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
-        duration: 0.25, interval: 0.35
-      },
-      {
-        startFreq: 400, endFreq: 1800, wave: "sine", enableFade: true, fadeTime: 0.08,
-        enableTone2: false, startFreq2: 800, endFreq2: 3600, wave2: "sine", enableFade2: false, fadeTime2: 0.05,
-        duration: 0.4, interval: 0.4
+  function formatTime(sec) {
+    const clamped = Math.max(0, sec);
+    const m = Math.floor(clamped / 60);
+    const s = (clamped - m * 60).toFixed(1).padStart(4, '0');
+    return `${String(m).padStart(2, '0')}:${s}`;
+  }
+
+  function updateMasterTimer() {
+    if (!isPlaying || !audioCtx) return;
+    masterTimerEl.textContent = formatTime(audioCtx.currentTime - sequenceStartTime);
+    timerAnimationId = requestAnimationFrame(updateMasterTimer);
+  }
+
+  function createChannelCard(id) {
+    const card = document.createElement('div');
+    card.className = 'channel-card';
+    card.dataset.id = id;
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">Channel #${id}</span>
+        <button class="btn-delete" title="Remove Channel">✕</button>
+      </div>
+
+      <div class="param-grid">
+        <div class="field">
+          <label>Start Freq (Hz)</label>
+          <input type="number" class="startFreq" value="440" step="1" min="20" max="20000">
+        </div>
+
+        <div class="field">
+          <label>End Freq (Hz)</label>
+          <input type="number" class="endFreq" value="140" step="1" min="20" max="20000">
+        </div>
+
+        <div class="field">
+          <label>Waveform</label>
+          <select class="waveType">
+            <option value="sine">Sine</option>
+            <option value="triangle">Triangle</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="square">Square</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Sweep Curve</label>
+          <select class="rampType">
+            <option value="linear">Linear</option>
+            <option value="exponential">Exponential</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Delay (s)</label>
+          <input type="number" class="startTime" value="0" step="0.1" min="0">
+        </div>
+
+        <div class="field">
+          <label>Duration (s)</label>
+          <input type="number" class="duration" value="1" step="0.1" min="0.1">
+        </div>
+
+        <div class="field">
+          <label>Interval (s)</label>
+          <input type="number" class="interval" value="0.5" step="0.1" min="0">
+        </div>
+
+        <div class="field">
+          <label>Gain (0–1)</label>
+          <input type="number" class="volume" value="0.5" step="0.1" min="0" max="1">
+        </div>
+
+        <div class="field full">
+          <div class="status-badge">Triggers at 00:00.0</div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="checkbox-group">
+          <input type="checkbox" class="loop" id="loop-${id}">
+          <label for="loop-${id}">Loop</label>
+        </div>
+        <button class="btn-preview">Preview Tone</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-delete').addEventListener('click', () => removeChannel(id));
+
+    const delayInput = card.querySelector('.startTime');
+    const statusBadge = card.querySelector('.status-badge');
+    const updateBadge = () => {
+      const val = parseFloat(delayInput.value) || 0;
+      statusBadge.textContent = `Triggers at ${formatTime(val)}`;
+    };
+    delayInput.addEventListener('input', updateBadge);
+    updateBadge();
+
+    card.querySelector('.btn-preview').addEventListener('click', () => {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+      playSweep(
+        ctx,
+        parseFloat(card.querySelector('.startFreq').value),
+        parseFloat(card.querySelector('.endFreq').value),
+        card.querySelector('.rampType').value,
+        card.querySelector('.waveType').value,
+        parseFloat(card.querySelector('.duration').value),
+        parseFloat(card.querySelector('.volume').value)
+      );
+    });
+
+    channelMap.set(id, { card, timerId: null, osc: null, removed: false });
+    return card;
+  }
+
+  function renumberChannels() {
+    const cards = channelGrid.querySelectorAll('.channel-card');
+    cards.forEach((card, index) => {
+      card.querySelector('.card-title').textContent = `Channel #${index + 1}`;
+    });
+  }
+
+  function addChannel() {
+    channelCounter += 1;
+    const id = channelCounter;
+    const card = createChannelCard(id);
+    channelGrid.appendChild(card);
+    renumberChannels();
+
+    if (isPlaying) {
+      scheduleChannel(id);
+    }
+  }
+
+  function removeChannel(id) {
+    const state = channelMap.get(id);
+    if (!state) return;
+    state.removed = true;
+    if (state.timerId) clearTimeout(state.timerId);
+    if (state.osc) {
+      try { state.osc.stop(); } catch (_) {}
+    }
+    state.card.remove();
+    channelMap.delete(id);
+    renumberChannels();
+  }
+
+  function playSweep(ctx, fStart, fEnd, curve, wave, dur, gainVal) {
+    const t0 = ctx.currentTime;
+    const t1 = t0 + dur;
+    const osc = ctx.createOscillator();
+    const amp = ctx.createGain();
+
+    osc.type = wave;
+    osc.frequency.setValueAtTime(fStart, t0);
+
+    if (fEnd !== fStart) {
+      if (curve === 'exponential' && fStart > 0 && fEnd > 0) {
+        osc.frequency.exponentialRampToValueAtTime(fEnd, t1);
+      } else {
+        osc.frequency.linearRampToValueAtTime(fEnd, t1);
       }
-    ];
-
-    function renderSequence() {
-      const container = document.getElementById('sequenceContainer');
-      container.innerHTML = '';
-
-      sequence.forEach((step, idx) => {
-        const card = document.createElement('div');
-        card.className = 'step-card';
-        card.innerHTML = `
-          <h4>Step ${idx + 1}</h4>
-          
-          <div class="sub-group">
-            <span class="sub-group-title">Tone Generator 1</span>
-            <div class="grid-2">
-              <label>Start: <input type="number" value="${step.startFreq}" onchange="updateStep(${idx}, 'startFreq', +this.value)"></label>
-              <label>End: <input type="number" value="${step.endFreq}" onchange="updateStep(${idx}, 'endFreq', +this.value)"></label>
-            </div>
-            <div class="grid-2">
-              <select onchange="updateStep(${idx}, 'wave', this.value)">
-                ${['sine', 'triangle', 'square', 'sawtooth'].map(w => `<option value="${w}" ${step.wave === w ? 'selected' : ''}>${w}</option>`).join('')}
-              </select>
-              <label><input type="checkbox" ${step.enableFade ? 'checked' : ''} onchange="updateStep(${idx}, 'enableFade', this.checked)"> Fade</label>
-            </div>
-          </div>
-
-          <div class="sub-group">
-            <span class="sub-group-title">Tone Generator 2</span>
-            <label><input type="checkbox" ${step.enableTone2 ? 'checked' : ''} onchange="updateStep(${idx}, 'enableTone2', this.checked)"> Enable</label>
-            <div class="grid-2">
-              <label>Start: <input type="number" value="${step.startFreq2}" onchange="updateStep(${idx}, 'startFreq2', +this.value)"></label>
-              <label>End: <input type="number" value="${step.endFreq2}" onchange="updateStep(${idx}, 'endFreq2', +this.value)"></label>
-            </div>
-            <select onchange="updateStep(${idx}, 'wave2', this.value)">
-              ${['sine', 'triangle', 'square', 'sawtooth'].map(w => `<option value="${w}" ${step.wave2 === w ? 'selected' : ''}>${w}</option>`).join('')}
-            </select>
-          </div>
-
-          <div class="sub-group">
-            <span class="sub-group-title">Timing</span>
-            <div class="grid-2">
-              <label>Tone (s): <input type="number" step="0.01" value="${step.duration}" onchange="updateStep(${idx}, 'duration', +this.value)"></label>
-              <label>Interval: <input type="number" step="0.01" value="${step.interval}" onchange="updateStep(${idx}, 'interval', +this.value)"></label>
-            </div>
-          </div>
-
-          <button class="btn-danger" onclick="removeStep(${idx})">Remove Step</button>
-        `;
-        container.appendChild(card);
-      });
     }
 
-    function updateStep(idx, key, val) { sequence[idx][key] = val; }
+    amp.gain.setValueAtTime(gainVal, t0);
+    osc.connect(amp);
+    amp.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t1);
+    return osc;
+  }
 
-    function addStep() {
-      const last = sequence.length ? { ...sequence[sequence.length - 1] } : {
-        startFreq: 440, endFreq: 440, wave: "sine", enableFade: true, fadeTime: 0.05,
-        enableTone2: false, startFreq2: 880, endFreq2: 880, wave2: "sine", enableFade2: true, fadeTime2: 0.05,
-        duration: 0.3, interval: 0.3
+  function scheduleChannel(id) {
+    const state = channelMap.get(id);
+    if (!state) return;
+    const card = state.card;
+
+    function runLoop() {
+      if (!isPlaying || state.removed) return;
+      const ctx = getAudioContext();
+      const fStart = parseFloat(card.querySelector('.startFreq').value);
+      const fEnd = parseFloat(card.querySelector('.endFreq').value);
+      const curve = card.querySelector('.rampType').value;
+      const wave = card.querySelector('.waveType').value;
+      const dur = parseFloat(card.querySelector('.duration').value);
+      const gainVal = parseFloat(card.querySelector('.volume').value);
+      const loop = card.querySelector('.loop').checked;
+      const interval = parseFloat(card.querySelector('.interval').value) || 0;
+
+      card.classList.add('active-playback');
+      const osc = playSweep(ctx, fStart, fEnd, curve, wave, dur, gainVal);
+      state.osc = osc;
+
+      osc.onended = () => {
+        state.osc = null;
+        if (state.removed) return;
+        card.classList.remove('active-playback');
+        if (loop && isPlaying) {
+          state.timerId = setTimeout(runLoop, interval * 1000);
+        }
       };
-      sequence.push(last);
-      renderSequence();
     }
 
-    function removeStep(idx) {
-      if (sequence.length > 1) {
-        sequence.splice(idx, 1);
-        renderSequence();
-      }
+    const delay = parseFloat(card.querySelector('.startTime').value) || 0;
+    state.timerId = setTimeout(runLoop, delay * 1000);
+  }
+
+  function startPlayback() {
+    if (isPlaying) return;
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    isPlaying = true;
+    sequenceStartTime = ctx.currentTime;
+    masterStatusEl.textContent = 'Running';
+
+    togglePlaybackBtn.textContent = '■ Stop All';
+    togglePlaybackBtn.classList.remove('is-stopped');
+    togglePlaybackBtn.classList.add('is-running');
+
+    updateMasterTimer();
+    channelMap.forEach((_, id) => scheduleChannel(id));
+  }
+
+  function stopPlayback() {
+    isPlaying = false;
+    masterStatusEl.textContent = 'Ready';
+    if (timerAnimationId) cancelAnimationFrame(timerAnimationId);
+
+    togglePlaybackBtn.textContent = '▶ Play All';
+    togglePlaybackBtn.classList.remove('is-running');
+    togglePlaybackBtn.classList.add('is-stopped');
+
+    channelMap.forEach((state) => {
+      if (state.timerId) clearTimeout(state.timerId);
+      state.timerId = null;
+      state.card.classList.remove('active-playback');
+    });
+
+    if (audioCtx) {
+      audioCtx.close();
+      audioCtx = null;
     }
+    masterTimerEl.textContent = '00:00.0';
+  }
 
-    function toggleMute() {
-      isMuted = !isMuted;
-      document.getElementById('muteBtn').innerText = isMuted ? "Unmute Tones" : "Mute Tones";
+  function togglePlayback() {
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      startPlayback();
     }
+  }
 
-    function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
+  addChannelBtn.addEventListener('click', addChannel);
+  togglePlaybackBtn.addEventListener('click', togglePlayback);
 
-    function togglePlay() {
-      initAudioContext();
-      isPlaying = !isPlaying;
-      const btn = document.getElementById('playBtn');
+  addChannel();
+  addChannel();
+</script>
 
-      if (isPlaying) {
-        btn.innerText = "Stop Sequence";
-        currentStepIndex = 0;
-        playNextStep();
-      } else {
-        btn.innerText = "Play Sequence";
-        clearTimeout(timerId);
-      }
-    }
-
-    function playTone(freqStart, freqEnd, waveType, duration, enableFade, fadeTime, targetNode, startTime) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.type = waveType;
-      
-      const f1 = Math.max(10, freqStart);
-      const f2 = Math.max(10, freqEnd);
-
-      osc.frequency.setValueAtTime(f1, startTime);
-      if (Math.abs(f1 - f2) > 0.01) {
-        osc.frequency.exponentialRampToValueAtTime(f2, startTime + duration);
-      }
-
-      if (enableFade && fadeTime > 0) {
-        const actualFade = Math.min(fadeTime, duration / 2);
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(1, startTime + actualFade);
-        gain.gain.setValueAtTime(1, startTime + duration - actualFade);
-        gain.gain.linearRampToValueAtTime(0, startTime + duration);
-      } else {
-        gain.gain.setValueAtTime(1, startTime);
-      }
-
-      osc.connect(gain);
-      gain.connect(targetNode);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    }
-
-    function playNextStep() {
-      if (!isPlaying) return;
-
-      const step = sequence[currentStepIndex];
-      const now = audioCtx.currentTime;
-      const duration = Math.max(0.05, step.duration);
-      const interval = Math.max(0.0, step.interval);
-      const totalStepTime = duration + interval;
-
-      const masterVol = isMuted ? 0 : parseFloat(document.getElementById('volVar').value);
-
-      // Routing setup (Filters -> Destination)
-      let outputNode = audioCtx.createGain();
-      outputNode.gain.setValueAtTime(masterVol, now);
-
-      if (document.getElementById('bwEnable').checked) {
-        const hp = audioCtx.createBiquadFilter();
-        hp.type = 'highpass';
-        hp.frequency.value = Math.max(10, parseFloat(document.getElementById('bwLeft').value));
-
-        const lp = audioCtx.createBiquadFilter();
-        lp.type = 'lowpass';
-        lp.frequency.value = Math.min(audioCtx.sampleRate / 2, parseFloat(document.getElementById('bwRight').value));
-
-        outputNode.connect(hp);
-        hp.connect(lp);
-        lp.connect(audioCtx.destination);
-      } else {
-        outputNode.connect(audioCtx.destination);
-      }
-
-      // Synthesize Tone 1
-      playTone(step.startFreq, step.endFreq, step.wave, duration, step.enableFade, step.fadeTime, outputNode, now);
-
-      // Synthesize Tone 2
-      if (step.enableTone2) {
-        playTone(step.startFreq2, step.endFreq2, step.wave2, duration, step.enableFade2, step.fadeTime2, outputNode, now);
-      }
-
-      // Post-Tone Hum during interval
-      if (interval > 0 && document.getElementById('humEnable').checked) {
-        const humFreq = parseFloat(document.getElementById('humFreq').value);
-        const humWave = document.getElementById('humWave').value;
-        const humVol = parseFloat(document.getElementById('humVol').value);
-        const humFade = document.getElementById('humFade').checked;
-        const humFadeLen = parseFloat(document.getElementById('humFadeLen').value);
-
-        const humGainNode = audioCtx.createGain();
-        humGainNode.gain.value = humVol;
-        humGainNode.connect(outputNode);
-
-        playTone(humFreq, humFreq, humWave, interval, humFade, humFadeLen, humGainNode, now + duration);
-      }
-
-      // Schedule next sequence step
-      currentStepIndex = (currentStepIndex + 1) % sequence.length;
-
-      if (currentStepIndex === 0 && !document.getElementById('loopVar').checked) {
-        timerId = setTimeout(() => {
-          isPlaying = false;
-          document.getElementById('playBtn').innerText = "Play Sequence";
-        }, totalStepTime * 1000);
-      } else {
-        timerId = setTimeout(playNextStep, totalStepTime * 1000);
-      }
-    }
-
-    function loadPreset(type) {
-      if (type === 'dual_sweep') {
-        sequence = [
-          { startFreq: 1500, endFreq: 400, wave: "sine", enableFade: true, fadeTime: 0.05, enableTone2: true, startFreq2: 2800, endFreq2: 800, wave2: "sine", enableFade2: true, fadeTime2: 0.05, duration: 0.2, interval: 0.3 },
-          { startFreq: 2000, endFreq: 500, wave: "sine", enableFade: true, fadeTime: 0.05, enableTone2: true, startFreq2: 1000, endFreq2: 300, wave2: "sine", enableFade2: true, fadeTime2: 0.05, duration: 0.2, interval: 0.3 },
-          { startFreq: 2500, endFreq: 600, wave: "sine", enableFade: true, fadeTime: 0.08, enableTone2: true, startFreq2: 1800, endFreq2: 400, wave2: "sine", enableFade2: true, fadeTime2: 0.08, duration: 0.35, interval: 0.4 }
-        ];
-      } else if (type === 'dtmf') {
-        sequence = [
-          { startFreq: 697, endFreq: 697, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1209, endFreq2: 1209, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.2, interval: 0.25 },
-          { startFreq: 697, endFreq: 697, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1336, endFreq2: 1336, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.2, interval: 0.25 },
-          { startFreq: 770, endFreq: 770, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 1477, endFreq2: 1477, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.3, interval: 0.3 }
-        ];
-      } else if (type === 'staccato') {
-        sequence = [
-          { startFreq: 440, endFreq: 440, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 554.37, endFreq2: 554.37, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.15, interval: 0.35 },
-          { startFreq: 554.37, endFreq: 554.37, wave: "sine", enableFade: true, fadeTime: 0.02, enableTone2: true, startFreq2: 659.25, endFreq2: 659.25, wave2: "sine", enableFade2: true, fadeTime2: 0.02, duration: 0.15, interval: 0.35 },
-          { startFreq: 659.25, endFreq: 659.25, wave: "sine", enableFade: true, fadeTime: 0.03, enableTone2: true, startFreq2: 880, endFreq2: 880, wave2: "sine", enableFade2: true, fadeTime2: 0.03, duration: 0.2, interval: 0.45 }
-        ];
-      }
-      renderSequence();
-    }
-
-    renderSequence();
-  </script>
 </body>
 </html>
